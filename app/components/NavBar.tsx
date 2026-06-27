@@ -2,9 +2,10 @@ import Link from "next/link";
 import CashflowLogo from "../components/CashflowLogo";
 
 const navLinks = [
-  { href: "/dashboard", label: "Home" },
-  { href: "/transactions", label: "Review" },
-  { href: "/reports", label: "About" },
+  { href: "/", label: "Home" },
+  { href: "/all-expenses", label: "All Expenses" },
+  { href: "/#reviews", label: "Review" },
+  { href: "/#about", label: "About" },
 ];
 
 export default function Navbar() {
