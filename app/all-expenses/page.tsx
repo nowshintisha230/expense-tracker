@@ -10,12 +10,11 @@ type Expense = {
   category: string;
   amount: number;
 };
-
 const categoryStyles: Record<string, string> = {
-  Food: "bg-green-100 text-green-700",
-  Transport: "bg-blue-100 text-blue-700",
-  Health: "bg-red-100 text-red-700",
-  Shopping: "bg-purple-100 text-purple-700",
+Food: "bg-green-100 text-green-700",
+ Transport: "bg-blue-100 text-blue-700",
+ Health: "bg-red-100 text-red-700",
+ Shopping: "bg-purple-100 text-purple-700",
   Other: "bg-gray-100 text-gray-600",
 };
 
@@ -30,14 +29,14 @@ const COLORS: Record<string, string> = {
 };
 
 const Page = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dateFilter, setDateFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const [editExpense, setEditExpense] = useState<Expense | null>(null);
-  const [formError, setFormError] = useState("");
-  const [form, setForm] = useState({
+ const [expenses, setExpenses] = useState<Expense[]>([]);
+const [loading, setLoading] = useState(true);
+const [dateFilter, setDateFilter] = useState("");
+const [categoryFilter, setCategoryFilter] = useState("");
+const [isOpen, setIsOpen] = useState(false);
+const [editExpense, setEditExpense] = useState<Expense | null>(null);
+const [formError, setFormError] = useState("");
+const [form, setForm] = useState({
     date: "",
     description: "",
     category: "",
