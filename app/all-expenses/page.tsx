@@ -19,6 +19,8 @@ const categoryStyles: Record<string, string> = {
   Other: "bg-gray-100 text-gray-600",
 };
 
+const fmtDate = (d?: string) => (d ? d.slice(0, 10) : "-");
+
 const COLORS: Record<string, string> = {
   Food: "#22c55e",
   Transport: "#3b82f6",
@@ -28,12 +30,13 @@ const COLORS: Record<string, string> = {
 };
 
 const Page = () => {
- const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
+  const [formError, setFormError] = useState("");
   const [form, setForm] = useState({
     date: "",
     description: "",
@@ -45,6 +48,11 @@ const Page = () => {
     const fetchExpenses = async () => {
       try {
         const res = await fetch("/api/expenses");
+        if (!res.ok) {
+          console.error("Failed to fetch expenses:", res.status);
+          setExpenses([]);
+          return;
+        }
         const data = await res.json();
         setExpenses(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -57,40 +65,62 @@ const Page = () => {
   }, []);
 
   const filtered = expenses.filter((e) => {
-    const matchDate = dateFilter ? e.date.slice(0, 10) === dateFilter : true;
+    const matchDate = dateFilter ? fmtDate(e.date) === dateFilter : true;
     const matchCat = categoryFilter ? e.category === categoryFilter : true;
     return matchDate && matchCat;
   });
 
-  const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+  const total = filtered.reduce((sum, e) => sum + (e.amount ?? 0), 0);
 
   const chartData = Object.entries(
     filtered.reduce((acc: Record<string, number>, e) => {
-      acc[e.category] = (acc[e.category] || 0) + e.amount;
+      acc[e.category] = (acc[e.category] || 0) + (e.amount ?? 0);
       return acc;
     }, {})
   ).map(([name, value]) => ({ name, value }));
 
   const handleAdd = async () => {
     if (!form.date || !form.description || !form.category || !form.amount) return;
+    setFormError("");
     try {
       const res = await fetch("/api/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, amount: Number(form.amount) }),
       });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error("Failed to add expense:", res.status, errBody);
+        setFormError(
+          res.status === 401
+            ? "You're not signed in. Please sign in and try again."
+            : errBody?.error || "Failed to add expense. Please try again."
+        );
+        return; // never push a failed response into state
+      }
+
       const newExpense = await res.json();
       setExpenses((prev) => [newExpense, ...prev]);
       setForm({ date: "", description: "", category: "", amount: "" });
       setIsOpen(false);
     } catch (err) {
       console.error("Failed to add expense", err);
+      setFormError("Something went wrong. Please try again.");
     }
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
-    setExpenses((prev) => prev.filter((e) => e._id !== id));
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        console.error("Failed to delete expense:", res.status);
+        return;
+      }
+      setExpenses((prev) => prev.filter((e) => e._id !== id));
+    } catch (err) {
+      console.error("Failed to delete expense", err);
+    }
   };
 
   const handleUpdate = async () => {
@@ -126,7 +156,7 @@ const Page = () => {
             <span className="text-xs text-blue-500 font-medium">Total:</span>
             <span className="text-sm font-semibold text-blue-700">$ {total.toLocaleString()}</span>
           </div>
-          <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4" onPress={() => setIsOpen(true)}>
+          <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4" onPress={() => { setFormError(""); setIsOpen(true); }}>
             + Add
           </Button>
         </div>
@@ -188,7 +218,6 @@ const Page = () => {
         </div>
       )}
 
-      {/* Mobile card layout */}
       <div className="flex flex-col gap-3 sm:hidden">
         {loading ? (
           <p className="text-center text-gray-400 text-sm py-10">Loading...</p>
@@ -197,22 +226,22 @@ const Page = () => {
             <p className="text-4xl mb-2">🧾</p>
             <p className="text-gray-500 font-medium text-sm">No expenses yet</p>
             <p className="text-gray-400 text-xs mt-1">Add your first expense to get started</p>
-            <Button size="sm" className="text-xs m-2.5" onPress={() => setIsOpen(true)}>
+            <Button size="sm" className="text-xs m-2.5" onPress={() => { setFormError(""); setIsOpen(true); }}>
               + Add
             </Button>
           </div>
         ) : (
-          filtered.map((e) => (
-            <div key={e._id} className="border rounded-xl p-3 flex flex-col gap-2">
+          filtered.map((e, i) => (
+            <div key={e._id ?? i} className="border rounded-xl p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${categoryStyles[e.category]}`}>
                   {e.category}
                 </span>
-                <span className="text-sm font-semibold text-gray-800">$ {e.amount.toLocaleString()}</span>
+                <span className="text-sm font-semibold text-gray-800">$ {(e.amount ?? 0).toLocaleString()}</span>
               </div>
               <p className="text-sm text-gray-700">{e.description}</p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">{e.date.slice(0, 10)}</span>
+                <span className="text-xs text-gray-400">{fmtDate(e.date)}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setEditExpense(e)}
@@ -233,7 +262,6 @@ const Page = () => {
         )}
       </div>
 
-      {/* Desktop table layout */}
       <div className="hidden sm:block border rounded-xl">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
@@ -256,22 +284,22 @@ const Page = () => {
                   <p className="text-4xl mb-2">🧾</p>
                   <p className="text-gray-500 font-medium text-sm">No expenses yet</p>
                   <p className="text-gray-400 text-xs mt-1">Add your first expense to get started</p>
-                  <Button size="sm" className="text-sm m-2.5 px-4" onPress={() => setIsOpen(true)}>
+                  <Button size="sm" className="text-sm m-2.5 px-4" onPress={() => { setFormError(""); setIsOpen(true); }}>
                     + Add
                   </Button>
                 </td>
               </tr>
             ) : (
-              filtered.map((e) => (
-                <tr key={e._id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-400">{e.date.slice(0, 10)}</td>
+              filtered.map((e, i) => (
+                <tr key={e._id ?? i} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="px-4 py-3 text-gray-400">{fmtDate(e.date)}</td>
                   <td className="px-4 py-3">{e.description}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${categoryStyles[e.category]}`}>
                       {e.category}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">$ {e.amount.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-medium">$ {(e.amount ?? 0).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button
@@ -299,6 +327,11 @@ const Page = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 flex flex-col gap-3">
             <h2 className="text-base font-medium">Add Expense</h2>
+            {formError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </p>
+            )}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500">Date</label>
               <input type="date" value={form.date}
@@ -333,7 +366,7 @@ const Page = () => {
               />
             </div>
             <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setIsOpen(false)}
+              <button onClick={() => { setIsOpen(false); setFormError(""); }}
                 className="border rounded-lg px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
               <button onClick={handleAdd}
                 className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600">Add Expense</button>
@@ -348,7 +381,7 @@ const Page = () => {
             <h2 className="text-base font-medium">Edit Expense</h2>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500">Date</label>
-              <input type="date" value={editExpense.date.slice(0, 10)}
+              <input type="date" value={editExpense.date ? editExpense.date.slice(0, 10) : ""}
                 onChange={(e) => setEditExpense({ ...editExpense, date: e.target.value })}
                 className="border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
@@ -373,7 +406,7 @@ const Page = () => {
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500">Amount</label>
-              <input type="number" value={editExpense.amount}
+              <input type="number" value={editExpense.amount ?? 0}
                 onChange={(e) => setEditExpense({ ...editExpense, amount: Number(e.target.value) })}
                 className="border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
