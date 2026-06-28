@@ -97,7 +97,7 @@ const Page = () => {
             ? "You're not signed in. Please sign in and try again."
             : errBody?.error || "Failed to add expense. Please try again."
         );
-        return; // never push a failed response into state
+        return; 
       }
 
       const newExpense = await res.json();
@@ -211,7 +211,7 @@ const Page = () => {
                   <Cell key={index} fill={COLORS[entry.name] || "#6b7280"} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => `$ ${value.toLocaleString()}`} />
+              <Tooltip formatter={(value) => `$ ${value.toLocaleString()}`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
