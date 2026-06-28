@@ -2,7 +2,7 @@
 
 A simple, fast expense tracking app built with Next.js, MongoDB, and Tailwind CSS. Track your spending, filter by date or category, and visualize where your money goes with an interactive pie chart.
 
-## Live Link : 
+## Live Link : https://expense-tracker-iota-wine.vercel.app/
 
 ## Features
 
