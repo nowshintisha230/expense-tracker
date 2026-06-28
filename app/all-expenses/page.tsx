@@ -211,7 +211,7 @@ const Page = () => {
                   <Cell key={index} fill={COLORS[entry.name] || "#6b7280"} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `$ ${value.toLocaleString()}`} />
+             <Tooltip formatter={(value) => `$ ${Number(value).toLocaleString()}`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
