@@ -12,6 +12,7 @@
     "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",
     "@heroui/theme": "^2.4.26",
+    "bcryptjs": "^2.4.3",
     "mongodb": "^7.4.0",
     "mongoose": "^9.7.2",
     "next": "16.2.9",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
